@@ -21,6 +21,10 @@ namespace BadNorth3D
         public TextMeshProUGUI selectedCountText;
         public GameObject recruitButton;
 
+        [Header("Panel References")]
+        public GameObject recruitmentPanel;
+        public GameObject upgradePanel;
+
         [Header("消息面板")]
         public GameObject messagePanel;
         public TextMeshProUGUI messageText;
@@ -67,6 +71,69 @@ namespace BadNorth3D
         {
             UpdateSelectedUnitCount();
             UpdateWaveTimer();
+            HandleKeyboardShortcuts();
+        }
+
+        void HandleKeyboardShortcuts()
+        {
+            // R键 - 招募面板
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                ToggleRecruitmentPanel();
+            }
+
+            // U键 - 升级面板
+            if (Input.GetKeyDown(KeyCode.U))
+            {
+                ToggleUpgradePanel();
+            }
+
+            // ESC键 - 关闭所有面板
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                CloseAllPanels();
+            }
+        }
+
+        public void ToggleRecruitmentPanel()
+        {
+            if (recruitmentPanel != null)
+            {
+                bool newState = !recruitmentPanel.activeSelf;
+                recruitmentPanel.SetActive(newState);
+
+                if (AudioSynthesizer.Instance != null)
+                {
+                    AudioSynthesizer.Instance.PlayUIClickSound();
+                }
+            }
+        }
+
+        public void ToggleUpgradePanel()
+        {
+            if (upgradePanel != null)
+            {
+                bool newState = !upgradePanel.activeSelf;
+                upgradePanel.SetActive(newState);
+
+                if (AudioSynthesizer.Instance != null)
+                {
+                    AudioSynthesizer.Instance.PlayUIClickSound();
+                }
+            }
+        }
+
+        public void CloseAllPanels()
+        {
+            if (recruitmentPanel != null)
+            {
+                recruitmentPanel.SetActive(false);
+            }
+
+            if (upgradePanel != null)
+            {
+                upgradePanel.SetActive(false);
+            }
         }
 
         void UpdateWaveTimer()
@@ -106,9 +173,23 @@ namespace BadNorth3D
                 Button button = recruitButton.GetComponent<Button>();
                 if (button != null)
                 {
-                    button.interactable = gold >= 20f;
+                    button.interactable = gold >= GameConfig.Units.RECRUIT_COST;
                 }
             }
+        }
+
+        public void ShowControlsHelp()
+        {
+            string helpText = "Controls:\n" +
+                            "Left Click - Select unit\n" +
+                            "Left Click + Drag - Select multiple units\n" +
+                            "Right Click - Move selected units\n" +
+                            "R - Recruitment panel\n" +
+                            "U - Upgrade panel\n" +
+                            "ESC - Close all panels\n" +
+                            "Space - Start next wave";
+
+            ShowMessage(helpText, 5f);
         }
 
         public void UpdateDayUI(int day)

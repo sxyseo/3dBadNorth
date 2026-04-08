@@ -104,6 +104,13 @@ namespace BadNorth3D
         public void OnEnemyKilled(float reward)
         {
             enemiesRemaining--;
+
+            // 通知EconomyManager
+            if (EconomyManager.Instance != null)
+            {
+                EconomyManager.Instance.AddGold(reward);
+            }
+
             gold += reward;
             UIManager.Instance.UpdateGoldUI(gold);
         }
@@ -153,6 +160,59 @@ namespace BadNorth3D
                 squadUnits.Add(unit);
                 UIManager.Instance.UpdateGoldUI(gold);
             }
+        }
+
+        public void RecruitUnit(SquadUnitType unitType)
+        {
+            if (squadUnits.Count >= maxSquadSize)
+            {
+                Debug.Log("Squad is full! Cannot recruit more units.");
+                return;
+            }
+
+            // 从配置中获取单位信息
+            UnitTypesConfig.SquadUnitTypeConfig config = GetUnitConfig(unitType);
+            if (config == null)
+            {
+                Debug.LogError($"Unit type {unitType} not found in configuration!");
+                return;
+            }
+
+            // 检查是否有足够的金币
+            if (EconomyManager.Instance != null && !EconomyManager.Instance.SpendGold(config.Cost))
+            {
+                Debug.Log($"Not enough gold to recruit {config.Name}! Need {config.Cost} gold.");
+                return;
+            }
+
+            // 在玩家附近生成单位
+            Vector3 spawnPos = Camera.main.transform.position + Camera.main.transform.forward * 3f + Vector3.up * 2f;
+            GameObject unit = new GameObject($"{config.Name}_{squadUnits.Count + 1}");
+            unit.transform.position = spawnPos;
+
+            // 添加SquadUnitAdvanced组件
+            var unitComponent = unit.AddComponent<SquadUnitAdvanced>();
+            // unitComponent.unitType = unitType; // 这会在Start中从配置自动应用
+
+            squadUnits.Add(unit);
+
+            Debug.Log($"Recruited {config.Name} for {config.Cost} gold!");
+
+            // 更新UI
+            if (EconomyManager.Instance != null)
+            {
+                UIManager.Instance.UpdateGoldUI(EconomyManager.Instance.GetCurrentGold());
+            }
+        }
+
+        UnitTypesConfig.SquadUnitTypeConfig GetUnitConfig(SquadUnitType unitType)
+        {
+            foreach (var config in UnitTypesConfig.PLAYER_UNITS)
+            {
+                if (config.Type == unitType)
+                    return config;
+            }
+            return UnitTypesConfig.PLAYER_UNITS[0]; // 默认返回战士
         }
 
         public void RestartGame()

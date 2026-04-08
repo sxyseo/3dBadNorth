@@ -333,6 +333,12 @@ namespace BadNorth3D
                 AudioSynthesizer.Instance.PlayDeathSound();
             }
 
+            // 通知EconomyManager
+            if (EconomyManager.Instance != null)
+            {
+                EconomyManager.Instance.OnEnemyKilled(enemyType);
+            }
+
             GameManager.Instance.OnEnemyKilled(goldReward);
 
             // 程序化死亡效果
