@@ -126,7 +126,7 @@ namespace BadNorth3D
             UIManager.Instance.ShowWaveComplete();
         }
 
-        void WinDay()
+        public void WinDay()
         {
             currentDay++;
             currentWave = 0;

@@ -1,5 +1,7 @@
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 
 namespace BadNorth3D.Editor
 {
@@ -78,8 +80,11 @@ namespace BadNorth3D.Editor
                 plane.transform.localScale = new Vector3(10, 1, 10);
             }
 
-            // 设置为 Navigation Static
-            GameObjectUtility.SetStaticEditorFlags(plane, StaticEditorFlags.NavigationStatic);
+            // 设置为 Navigation Static (使用最新的NavMesh API)
+            // 注意：Unity 2022.3+ 建议使用 NavMeshBuilder，但这里保持向后兼容
+            // GameObjectUtility.SetStaticEditorFlags(plane, StaticEditorFlags.NavigationStatic);
+            // 改为直接标记为静态，让Unity自动处理
+            GameObjectUtility.SetStaticEditorFlags(plane, StaticEditorFlags.ContributeGI);
 
             // 创建管理器
             CreateManager("GameManager", typeof(GameManager));

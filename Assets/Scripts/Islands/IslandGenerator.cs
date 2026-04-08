@@ -16,6 +16,8 @@ namespace BadNorth3D
         public float islandRadius = 20f;
         public float falloffPower = 2f;
 
+        private Terrain terrain;
+
         void Start()
         {
             GenerateIsland();
@@ -23,7 +25,7 @@ namespace BadNorth3D
 
         void GenerateIsland()
         {
-            Terrain terrain = GetComponent<Terrain>();
+            terrain = GetComponent<Terrain>();
             if (terrain == null)
             {
                 terrain = gameObject.AddComponent<Terrain>();

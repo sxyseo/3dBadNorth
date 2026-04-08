@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.SceneManagement;
 
 namespace BadNorth3D.Editor
 {
@@ -67,9 +68,9 @@ namespace BadNorth3D.Editor
         [MenuItem("Bad North 3D/Quick Setup/Bake NavMesh", false, 5)]
         public static void BakeNavMesh()
         {
-            // 打开 Navigation 窗口
-            EditorWindow.GetWindow(typeof(UnityEditor.AI.NavigationWindow));
-            Debug.Log("请手动点击 Bake 按钮来生成 NavMesh");
+            // 打开 Navigation 窗口 (Unity 2022.3+ 使用 AI Navigation 窗口)
+            EditorApplication.ExecuteMenuItem("Window/AI/Navigation");
+            Debug.Log("请在 Navigation 窗口中点击 Bake 按钮来生成 NavMesh");
         }
 
         [MenuItem("Bad North 3D/Documentation/Readme", false, 10)]
