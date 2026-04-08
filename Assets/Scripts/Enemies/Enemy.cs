@@ -339,6 +339,12 @@ namespace BadNorth3D
                 EconomyManager.Instance.OnEnemyKilled(enemyType);
             }
 
+            // 通知成就系统
+            if (Achievements.AchievementTracker.Instance != null)
+            {
+                Achievements.AchievementTracker.Instance.OnEnemyKilled(enemyType);
+            }
+
             GameManager.Instance.OnEnemyKilled(goldReward);
 
             // 程序化死亡效果

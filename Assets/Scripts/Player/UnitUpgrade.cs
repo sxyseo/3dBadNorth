@@ -54,6 +54,12 @@ namespace BadNorth3D
             {
                 currentLevel++;
 
+                // 通知成就系统
+                if (Achievements.AchievementTracker.Instance != null)
+                {
+                    Achievements.AchievementTracker.Instance.OnUnitUpgraded(currentLevel);
+                }
+
                 // 应用升级效果
                 ApplyUpgradeBenefits();
 

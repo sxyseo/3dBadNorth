@@ -46,6 +46,9 @@ namespace BadNorth3D
             navAgent = GetComponent<UnityEngine.AI.NavMeshAgent>();
             navAgent.speed = moveSpeed;
 
+            // 应用天气影响
+            ApplyWeatherEffects();
+
             animator = GetComponent<Animator>();
             healthBar = GetComponentInChildren<HealthBar>();
 
@@ -259,6 +262,7 @@ namespace BadNorth3D
         {
             UpdateSelectionIndicator();
             UpdateAbilities();
+            UpdateWeatherEffects();
 
             if (isMoving && navAgent.remainingDistance < 0.5f)
             {
@@ -585,6 +589,35 @@ namespace BadNorth3D
             if (indicator != null)
             {
                 Destroy(indicator.gameObject);
+            }
+        }
+
+        // ==================== 天气系统 ====================
+
+        void ApplyWeatherEffects()
+        {
+            if (Weather.WeatherSystem.Instance == null)
+                return;
+
+            float movementModifier = Weather.WeatherSystem.Instance.GetMovementModifier();
+
+            if (navAgent != null)
+            {
+                navAgent.speed = moveSpeed * movementModifier;
+            }
+        }
+
+        void UpdateWeatherEffects()
+        {
+            if (Weather.WeatherSystem.Instance == null)
+                return;
+
+            // 持续应用天气影响（因为天气可能动态变化）
+            float movementModifier = Weather.WeatherSystem.Instance.GetMovementModifier();
+
+            if (navAgent != null && !isMoving)
+            {
+                navAgent.speed = moveSpeed * movementModifier;
             }
         }
 

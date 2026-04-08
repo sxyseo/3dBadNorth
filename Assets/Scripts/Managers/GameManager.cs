@@ -83,6 +83,12 @@ namespace BadNorth3D
             waveInProgress = true;
             UIManager.Instance.UpdateWaveUI(currentWave, totalWaves);
 
+            // 通知成就追踪器
+            if (Achievements.AchievementTracker.Instance != null)
+            {
+                Achievements.AchievementTracker.Instance.OnWaveStart(currentWave);
+            }
+
             int enemyCount = 5 + (currentWave * 3) + (currentDay * 2);
             StartCoroutine(SpawnWave(enemyCount));
         }
@@ -131,6 +137,18 @@ namespace BadNorth3D
             gold += 20f + (currentWave * 5f); // 波次完成奖励
             UIManager.Instance.UpdateGoldUI(gold);
             UIManager.Instance.ShowWaveComplete();
+
+            // 通知成就追踪器
+            if (Achievements.AchievementTracker.Instance != null)
+            {
+                Achievements.AchievementTracker.Instance.OnWaveComplete(currentWave);
+            }
+
+            // 检查Boss生成
+            if (BossSpawner.Instance != null)
+            {
+                BossSpawner.Instance.CheckBossSpawn(currentWave);
+            }
         }
 
         public void WinDay()
@@ -183,6 +201,12 @@ namespace BadNorth3D
             {
                 Debug.Log($"Not enough gold to recruit {config.Name}! Need {config.Cost} gold.");
                 return;
+            }
+
+            // 通知成就系统
+            if (Achievements.AchievementTracker.Instance != null)
+            {
+                Achievements.AchievementTracker.Instance.OnUnitRecruited(unitType);
             }
 
             // 在玩家附近生成单位
