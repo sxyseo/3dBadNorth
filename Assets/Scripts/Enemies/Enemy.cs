@@ -36,10 +36,15 @@ namespace BadNorth3D
 
         public void Initialize(int wave, int day)
         {
-            // 根据波次和天数提升属性
-            maxHealth = 50f + (wave * 10f) + (day * 5f);
-            attackDamage = 10f + (wave * 2f);
-            goldReward = 5f + (wave * 1f);
+            // 从配置中读取基础数值
+            float baseHealth = 50f;
+            float baseDamage = 10f;
+            float baseGold = 5f;
+
+            // 根据波次和天数提升属性（使用配置）
+            maxHealth = baseHealth + (wave * GameConfig.Enemies.HEALTH_PER_WAVE) + (day * 5f);
+            attackDamage = baseDamage + (wave * GameConfig.Enemies.DAMAGE_PER_WAVE);
+            goldReward = baseGold + (wave * GameConfig.Enemies.GOLD_PER_WAVE);
 
             currentHealth = maxHealth;
 
@@ -60,53 +65,26 @@ namespace BadNorth3D
 
         void SetEnemyType()
         {
-            // 根据波次增加敌人类型多样性
-            int typeRoll = Random.Range(0, 4); // 0-3种类型
+            // 从配置中随机选择一种敌人类型
+            GameConfig.EnemyTypeConfig config = GameConfig.Enemies.Types[Random.Range(0, GameConfig.Enemies.Types.Length)];
 
-            // 根据类型设置属性和外观
-            Renderer[] renderers = GetComponentsInChildren<Renderer>();
+            // 应用配置
+            enemyType = config.Type;
+            moveSpeed *= config.SpeedMultiplier;
+            maxHealth *= config.HealthMultiplier;
+            attackDamage *= config.DamageMultiplier;
+            attackRange = config.AttackRange;
 
-            switch (typeRoll)
+            if (navAgent != null)
             {
-                case 0: // 普通战士
-                    enemyType = EnemyType.Normal;
-                    transform.localScale = Vector3.one;
-                    SetEnemyColor(renderers, new Color(1f, 0.2f, 0.2f)); // 红色
-                    break;
-
-                case 1: // 快速轻型单位
-                    enemyType = EnemyType.Fast;
-                    moveSpeed = 5f;
-                    maxHealth *= 0.7f;
-                    attackDamage *= 0.8f;
-                    navAgent.speed = moveSpeed;
-                    transform.localScale = new Vector3(0.7f, 0.7f, 0.7f);
-                    SetEnemyColor(renderers, new Color(1f, 0.6f, 0.2f)); // 橙色
-                    break;
-
-                case 2: // 重型坦克
-                    enemyType = EnemyType.Heavy;
-                    moveSpeed = 2f;
-                    maxHealth *= 1.8f;
-                    attackDamage *= 1.4f;
-                    attackCooldown = 2f;
-                    navAgent.speed = moveSpeed;
-                    navAgent.autoBraking = false;
-                    transform.localScale = new Vector3(1.4f, 1.4f, 1.4f);
-                    SetEnemyColor(renderers, new Color(0.6f, 0.2f, 0.6f)); // 紫色
-                    break;
-
-                case 3: // 远程弓箭手
-                    enemyType = EnemyType.Ranged;
-                    attackRange = 8f;
-                    moveSpeed = 2.5f;
-                    maxHealth *= 0.6f;
-                    attackDamage *= 0.7f;
-                    navAgent.speed = moveSpeed;
-                    transform.localScale = new Vector3(0.9f, 1.2f, 0.9f);
-                    SetEnemyColor(renderers, new Color(0.2f, 0.8f, 1f)); // 青色
-                    break;
+                navAgent.speed = moveSpeed;
             }
+
+            transform.localScale = config.Scale;
+
+            // 应用配置的颜色
+            Renderer[] renderers = GetComponentsInChildren<Renderer>();
+            SetEnemyColor(renderers, config.Color);
 
             currentHealth = maxHealth;
         }
