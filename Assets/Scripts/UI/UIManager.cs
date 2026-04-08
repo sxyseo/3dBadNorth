@@ -227,6 +227,15 @@ namespace BadNorth3D
             }
         }
 
+        System.Collections.IEnumerator HidePanelAfterDelay(GameObject panel, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            if (panel != null)
+            {
+                panel.SetActive(false);
+            }
+        }
+
         // 按钮回调
         public void OnRecruitButtonClicked()
         {
