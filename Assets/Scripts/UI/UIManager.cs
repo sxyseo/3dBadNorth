@@ -93,6 +93,24 @@ namespace BadNorth3D
             {
                 CloseAllPanels();
             }
+
+            // F5键 - 快速保存
+            if (Input.GetKeyDown(KeyCode.F5))
+            {
+                QuickSave();
+            }
+
+            // F9键 - 快速加载
+            if (Input.GetKeyDown(KeyCode.F9))
+            {
+                QuickLoad();
+            }
+
+            // H键 - 显示帮助
+            if (Input.GetKeyDown(KeyCode.H))
+            {
+                ShowControlsHelp();
+            }
         }
 
         public void ToggleRecruitmentPanel()
@@ -351,6 +369,92 @@ namespace BadNorth3D
             if (dayCompletePanel != null)
             {
                 dayCompletePanel.SetActive(false);
+            }
+        }
+
+        // ==================== 存档系统 ====================
+
+        public void QuickSave()
+        {
+            if (SaveSystem.Instance != null)
+            {
+                if (SaveSystem.Instance.SaveGame(0))
+                {
+                    ShowMessage("游戏已保存!", 2f);
+
+                    if (AudioSynthesizer.Instance != null)
+                    {
+                        AudioSynthesizer.Instance.PlayUIClickSound();
+                    }
+                }
+                else
+                {
+                    ShowMessage("保存失败!", 2f);
+                }
+            }
+        }
+
+        public void QuickLoad()
+        {
+            if (SaveSystem.Instance != null)
+            {
+                if (SaveSystem.Instance.SaveExists(0))
+                {
+                    if (SaveSystem.Instance.LoadGame(0))
+                    {
+                        ShowMessage("游戏已加载!", 2f);
+
+                        if (AudioSynthesizer.Instance != null)
+                        {
+                            AudioSynthesizer.Instance.PlayUIClickSound();
+                        }
+                    }
+                    else
+                    {
+                        ShowMessage("加载失败!", 2f);
+                    }
+                }
+                else
+                {
+                    ShowMessage("没有找到存档!", 2f);
+                }
+            }
+        }
+
+        public void SaveGame(int slot)
+        {
+            if (SaveSystem.Instance != null)
+            {
+                if (SaveSystem.Instance.SaveGame(slot))
+                {
+                    ShowMessage($"游戏已保存到槽位 {slot}!", 2f);
+                }
+                else
+                {
+                    ShowMessage($"保存到槽位 {slot} 失败!", 2f);
+                }
+            }
+        }
+
+        public void LoadGame(int slot)
+        {
+            if (SaveSystem.Instance != null)
+            {
+                if (SaveSystem.Instance.SaveExists(slot))
+                {
+                    if (SaveSystem.Instance.LoadGame(slot))
+                    {
+                        ShowMessage($"从槽位 {slot} 加载游戏!", 2f);
+                    }
+                    else
+                    {
+                        ShowMessage($"从槽位 {slot} 加载失败!", 2f);
+                    }
+                }
+                else
+                {
+                    ShowMessage($"槽位 {slot} 没有存档!", 2f);
+                }
             }
         }
     }
