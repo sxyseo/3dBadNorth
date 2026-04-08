@@ -263,18 +263,5 @@ namespace BadNorth3D
                 dayCompletePanel.SetActive(false);
             }
         }
-
-        public void OnRestartButtonClicked()
-        {
-            GameManager.Instance.RestartGame();
-        }
-
-        public void OnNextDayButtonClicked()
-        {
-            if (dayCompletePanel != null)
-            {
-                dayCompletePanel.SetActive(false);
-            }
-        }
     }
 }
