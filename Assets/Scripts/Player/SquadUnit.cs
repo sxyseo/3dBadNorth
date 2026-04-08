@@ -109,9 +109,21 @@ namespace BadNorth3D
 
                 if (distance <= attackRange)
                 {
+                    navAgent.isStopped = true;
+
                     if (Time.time - lastAttackTime >= attackCooldown)
                     {
                         lastAttackTime = Time.time;
+
+                        // 播放攻击音效
+                        if (AudioSynthesizer.Instance != null)
+                        {
+                            AudioSynthesizer.Instance.PlayAttackSound();
+                        }
+
+                        // 攻击动画（简单的旋转和缩放）
+                        yield return StartCoroutine(PlayAttackAnimation());
+
                         enemy.TakeDamage(attackDamage);
 
                         if (animator != null)
@@ -123,6 +135,7 @@ namespace BadNorth3D
                 else
                 {
                     // 追击敌人
+                    navAgent.isStopped = false;
                     navAgent.SetDestination(enemy.transform.position);
                 }
 
@@ -131,6 +144,30 @@ namespace BadNorth3D
 
             isAttacking = false;
             targetEnemy = null;
+            navAgent.isStopped = false;
+        }
+
+        IEnumerator PlayAttackAnimation()
+        {
+            // 简单的攻击动画 - 向前突刺
+            Vector3 originalPos = transform.position;
+            Vector3 attackDirection = (targetEnemy != null) ?
+                (targetEnemy.position - transform.position).normalized : transform.forward;
+
+            float attackDuration = 0.15f;
+            float elapsed = 0f;
+
+            while (elapsed < attackDuration)
+            {
+                float t = elapsed / attackDuration;
+                float thrust = Mathf.Sin(t * Mathf.PI) * 0.5f; // 前突0.5单位
+
+                transform.position = originalPos + attackDirection * thrust;
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            transform.position = originalPos;
         }
 
         public void MoveTo(Vector3 targetPosition)
@@ -173,13 +210,40 @@ namespace BadNorth3D
 
         void Die()
         {
+            // 播放死亡音效
+            if (AudioSynthesizer.Instance != null)
+            {
+                AudioSynthesizer.Instance.PlayDeathSound();
+            }
+
             GameManager.Instance.OnUnitKilled(gameObject);
 
-            // 死亡效果
-            GameObject deathEffect = Instantiate(Resources.Load<GameObject>("Prefabs/DeathEffect"), transform.position, Quaternion.identity);
-            Destroy(deathEffect, 2f);
+            // 创建程序化死亡效果
+            StartCoroutine(PlayDeathEffect());
 
-            Destroy(gameObject);
+            Destroy(gameObject, 0.5f);
+        }
+
+        IEnumerator PlayDeathEffect()
+        {
+            // 简单的死亡动画 - 倒下
+            float elapsed = 0f;
+            float deathDuration = 0.4f;
+            Vector3 originalScale = transform.localScale;
+
+            while (elapsed < deathDuration)
+            {
+                float t = elapsed / deathDuration;
+                transform.localScale = originalScale * (1f - t * 0.5f); // 缩小到50%
+                transform.rotation = Quaternion.Euler(t * 90f, transform.rotation.eulerAngles.y, transform.rotation.eulerAngles.z); // 向前倒
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+        }
+
+        public bool IsAlive()
+        {
+            return currentHealth > 0;
         }
 
         void OnDrawGizmosSelected()

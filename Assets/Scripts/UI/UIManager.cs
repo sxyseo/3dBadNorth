@@ -15,6 +15,7 @@ namespace BadNorth3D
         public TextMeshProUGUI goldText;
         public TextMeshProUGUI dayText;
         public TextMeshProUGUI waveText;
+        public TextMeshProUGUI waveTimerText;
 
         [Header("单位UI")]
         public TextMeshProUGUI selectedCountText;
@@ -28,6 +29,19 @@ namespace BadNorth3D
         [Header("游戏结束UI")]
         public GameObject gameOverPanel;
         public GameObject dayCompletePanel;
+
+        [Header("波次信息")]
+        public GameObject waveStartPanel;
+        public TextMeshProUGUI waveStartText;
+        public GameObject waveCompletePanel;
+        public TextMeshProUGUI waveCompleteText;
+
+        // 波次计时器
+        private float waveTimer;
+        private bool waveTimerActive;
+
+        // 波次奖励动画
+        private Coroutine rewardAnimationCoroutine;
 
         void Awake()
         {
@@ -52,6 +66,22 @@ namespace BadNorth3D
         void Update()
         {
             UpdateSelectedUnitCount();
+            UpdateWaveTimer();
+        }
+
+        void UpdateWaveTimer()
+        {
+            if (waveTimerActive && waveTimerText != null)
+            {
+                waveTimer -= Time.deltaTime;
+                waveTimerText.text = $"下一波: {Mathf.Max(0, Mathf.CeilToInt(waveTimer))}秒";
+
+                if (waveTimer <= 0)
+                {
+                    waveTimerActive = false;
+                    waveTimerText.gameObject.SetActive(false);
+                }
+            }
         }
 
         void UpdateSelectedUnitCount()
@@ -95,11 +125,56 @@ namespace BadNorth3D
             {
                 waveText.text = $"波次: {current}/{total}";
             }
+
+            // 显示波次开始提示
+            ShowWaveStart(current, total);
+        }
+
+        public void SetWaveTimer(float duration)
+        {
+            waveTimer = duration;
+            waveTimerActive = true;
+            if (waveTimerText != null)
+            {
+                waveTimerText.gameObject.SetActive(true);
+            }
+        }
+
+        void ShowWaveStart(int waveNum, int totalWaves)
+        {
+            if (waveStartPanel != null && waveStartText != null)
+            {
+                waveStartText.text = $"第 {waveNum} 波开始！";
+                waveStartPanel.SetActive(true);
+
+                // 3秒后自动隐藏
+                StartCoroutine(HidePanelAfterDelay(waveStartPanel, 3f));
+            }
+
+            // 播放波次音效
+            if (AudioSynthesizer.Instance != null)
+            {
+                AudioSynthesizer.Instance.PlayWaveCompleteSound();
+            }
         }
 
         public void ShowWaveComplete()
         {
-            ShowMessage("波次完成！按空格键继续", 3f);
+            if (waveCompletePanel != null && waveCompleteText != null)
+            {
+                waveCompleteText.text = "波次完成！";
+                waveCompletePanel.SetActive(true);
+
+                StartCoroutine(HidePanelAfterDelay(waveCompletePanel, 2f));
+            }
+
+            ShowMessage("波次完成！休息时间", 3f);
+
+            // 播放完成音效
+            if (AudioSynthesizer.Instance != null)
+            {
+                AudioSynthesizer.Instance.PlayWaveCompleteSound();
+            }
         }
 
         public void ShowDayComplete(int nextDay)
@@ -123,6 +198,12 @@ namespace BadNorth3D
             if (gameOverPanel != null)
             {
                 gameOverPanel.SetActive(true);
+            }
+
+            // 播放游戏结束音效
+            if (AudioSynthesizer.Instance != null)
+            {
+                AudioSynthesizer.Instance.PlayGameOverSound();
             }
         }
 
@@ -149,7 +230,38 @@ namespace BadNorth3D
         // 按钮回调
         public void OnRecruitButtonClicked()
         {
+            // 播放UI音效
+            if (AudioSynthesizer.Instance != null)
+            {
+                AudioSynthesizer.Instance.PlayUIClickSound();
+            }
+
             GameManager.Instance.SpawnSquadUnit();
+        }
+
+        public void OnRestartButtonClicked()
+        {
+            // 播放UI音效
+            if (AudioSynthesizer.Instance != null)
+            {
+                AudioSynthesizer.Instance.PlayUIClickSound();
+            }
+
+            GameManager.Instance.RestartGame();
+        }
+
+        public void OnNextDayButtonClicked()
+        {
+            // 播放UI音效
+            if (AudioSynthesizer.Instance != null)
+            {
+                AudioSynthesizer.Instance.PlayUIClickSound();
+            }
+
+            if (dayCompletePanel != null)
+            {
+                dayCompletePanel.SetActive(false);
+            }
         }
 
         public void OnRestartButtonClicked()

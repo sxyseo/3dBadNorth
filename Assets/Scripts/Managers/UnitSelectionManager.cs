@@ -176,6 +176,12 @@ namespace BadNorth3D
         {
             selectedUnits.Add(unit);
             unit.Select();
+
+            // 播放选择音效
+            if (AudioSynthesizer.Instance != null)
+            {
+                AudioSynthesizer.Instance.PlaySelectSound();
+            }
         }
 
         void DeselectAllUnits()
@@ -260,6 +266,7 @@ namespace BadNorth3D
 
         void ShowMoveIndicator(Vector3 position)
         {
+            // 创建程序化移动指示器
             GameObject indicator = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
             indicator.name = "MoveIndicator";
             indicator.transform.position = position + new Vector3(0, 0.1f, 0);
@@ -270,7 +277,30 @@ namespace BadNorth3D
             indicator.GetComponent<MeshRenderer>().material = material;
 
             Destroy(indicator.GetComponent<Collider>());
+
+            // 动画效果
+            StartCoroutine(AnimateMoveIndicator(indicator));
+
             Destroy(indicator, 1f);
+        }
+
+        System.Collections.IEnumerator AnimateMoveIndicator(GameObject indicator)
+        {
+            float elapsed = 0f;
+            float duration = 1f;
+            Vector3 startScale = indicator.transform.localScale;
+            Vector3 startRot = indicator.transform.eulerAngles;
+
+            while (elapsed < duration)
+            {
+                float t = elapsed / duration;
+                float scale = 1f + t * 0.5f;
+                indicator.transform.localScale = startScale * scale;
+                indicator.transform.eulerAngles = startRot + new Vector3(0, t * 180f, 0);
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
         }
 
         public List<SquadUnit> GetSelectedUnits()

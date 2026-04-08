@@ -8,6 +8,14 @@ namespace BadNorth3D
     /// </summary>
     public class Enemy : MonoBehaviour
     {
+        public enum EnemyType
+        {
+            Normal,      // 普通战士
+            Fast,        // 快速轻型
+            Heavy,       // 重型坦克
+            Ranged       // 远程弓箭手
+        }
+
         [Header("属性")]
         public float maxHealth = 50f;
         public float currentHealth;
@@ -15,6 +23,8 @@ namespace BadNorth3D
         public float attackDamage = 10f;
         public float attackRange = 1.5f;
         public float attackCooldown = 1.5f;
+
+        private EnemyType enemyType;
 
         private UnityEngine.AI.NavMeshAgent navAgent;
         private Animator animator;
@@ -50,30 +60,66 @@ namespace BadNorth3D
 
         void SetEnemyType()
         {
-            // 随机敌人类型，影响外观和属性
-            int type = Random.Range(0, 3);
+            // 根据波次增加敌人类型多样性
+            int typeRoll = Random.Range(0, 4); // 0-3种类型
 
-            switch (type)
+            // 根据类型设置属性和外观
+            Renderer[] renderers = GetComponentsInChildren<Renderer>();
+
+            switch (typeRoll)
             {
                 case 0: // 普通战士
+                    enemyType = EnemyType.Normal;
                     transform.localScale = Vector3.one;
+                    SetEnemyColor(renderers, new Color(1f, 0.2f, 0.2f)); // 红色
                     break;
+
                 case 1: // 快速轻型单位
+                    enemyType = EnemyType.Fast;
                     moveSpeed = 5f;
                     maxHealth *= 0.7f;
+                    attackDamage *= 0.8f;
                     navAgent.speed = moveSpeed;
-                    transform.localScale = new Vector3(0.8f, 0.8f, 0.8f);
+                    transform.localScale = new Vector3(0.7f, 0.7f, 0.7f);
+                    SetEnemyColor(renderers, new Color(1f, 0.6f, 0.2f)); // 橙色
                     break;
+
                 case 2: // 重型坦克
+                    enemyType = EnemyType.Heavy;
                     moveSpeed = 2f;
-                    maxHealth *= 1.5f;
-                    attackDamage *= 1.3f;
+                    maxHealth *= 1.8f;
+                    attackDamage *= 1.4f;
+                    attackCooldown = 2f;
                     navAgent.speed = moveSpeed;
-                    transform.localScale = new Vector3(1.3f, 1.3f, 1.3f);
+                    navAgent.autoBraking = false;
+                    transform.localScale = new Vector3(1.4f, 1.4f, 1.4f);
+                    SetEnemyColor(renderers, new Color(0.6f, 0.2f, 0.6f)); // 紫色
+                    break;
+
+                case 3: // 远程弓箭手
+                    enemyType = EnemyType.Ranged;
+                    attackRange = 8f;
+                    moveSpeed = 2.5f;
+                    maxHealth *= 0.6f;
+                    attackDamage *= 0.7f;
+                    navAgent.speed = moveSpeed;
+                    transform.localScale = new Vector3(0.9f, 1.2f, 0.9f);
+                    SetEnemyColor(renderers, new Color(0.2f, 0.8f, 1f)); // 青色
                     break;
             }
 
             currentHealth = maxHealth;
+        }
+
+        void SetEnemyColor(Renderer[] renderers, Color color)
+        {
+            foreach (Renderer renderer in renderers)
+            {
+                if (renderer.material.HasProperty("_Color"))
+                {
+                    renderer.material.color = color;
+                }
+            }
         }
 
         void Update()
@@ -135,11 +181,15 @@ namespace BadNorth3D
                     if (Time.time - lastAttackTime >= attackCooldown)
                     {
                         lastAttackTime = Time.time;
-                        unit.TakeDamage(attackDamage);
 
-                        if (animator != null)
+                        // 远程敌人特殊处理
+                        if (enemyType == EnemyType.Ranged)
                         {
-                            animator.SetTrigger("Attack");
+                            yield return StartCoroutine(RangedAttack(unit));
+                        }
+                        else
+                        {
+                            yield return StartCoroutine(MeleeAttack(unit));
                         }
                     }
                 }
@@ -154,6 +204,102 @@ namespace BadNorth3D
 
             isAttacking = false;
             navAgent.isStopped = false;
+        }
+
+        IEnumerator MeleeAttack(SquadUnit unit)
+        {
+            // 近战攻击动画
+            Vector3 originalPos = transform.position;
+            Vector3 direction = (unit.transform.position - transform.position).normalized;
+
+            // 向前突刺
+            float attackDuration = 0.2f;
+            float elapsed = 0f;
+
+            while (elapsed < attackDuration)
+            {
+                float t = elapsed / attackDuration;
+                float thrust = Mathf.Sin(t * Mathf.PI) * 0.5f;
+                transform.position = originalPos + direction * thrust;
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            transform.position = originalPos;
+
+            // 造成伤害
+            if (AudioSynthesizer.Instance != null)
+            {
+                AudioSynthesizer.Instance.PlayAttackSound();
+            }
+
+            unit.TakeDamage(attackDamage);
+
+            if (animator != null)
+            {
+                animator.SetTrigger("Attack");
+            }
+        }
+
+        IEnumerator RangedAttack(SquadUnit unit)
+        {
+            // 远程攻击 - 发射投射物
+            if (AudioSynthesizer.Instance != null)
+            {
+                AudioSynthesizer.Instance.PlayAttackSound();
+            }
+
+            GameObject projectile = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            projectile.name = "Projectile";
+            projectile.transform.position = transform.position + Vector3.up * 1.5f;
+            projectile.transform.localScale = new Vector3(0.3f, 0.3f, 0.3f);
+
+            // 设置投射物颜色
+            Renderer projRenderer = projectile.GetComponent<Renderer>();
+            projRenderer.material.color = Color.cyan;
+
+            // 发射投射物
+            float projectileSpeed = 10f;
+            Vector3 targetPos = unit.transform.position + Vector3.up;
+            float travelTime = 0f;
+            float maxTravelTime = 2f;
+
+            while (projectile != null && travelTime < maxTravelTime)
+            {
+                if (unit == null || !unit.IsAlive())
+                    break;
+
+                Vector3 direction = (targetPos - projectile.transform.position).normalized;
+                projectile.transform.position += direction * projectileSpeed * Time.deltaTime;
+                projectile.transform.position = Vector3.Lerp(projectile.transform.position, targetPos, Time.deltaTime * 2f);
+
+                travelTime += Time.deltaTime;
+
+                // 检测命中
+                if (Vector3.Distance(projectile.transform.position, targetPos) < 0.5f)
+                {
+                    if (AudioSynthesizer.Instance != null)
+                    {
+                        AudioSynthesizer.Instance.PlayHitSound();
+                    }
+
+                    unit.TakeDamage(attackDamage);
+                    Destroy(projectile);
+                    break;
+                }
+
+                yield return null;
+            }
+
+            if (projectile != null)
+            {
+                Destroy(projectile);
+            }
+
+            if (animator != null)
+            {
+                animator.SetTrigger("Attack");
+            }
         }
 
         public void TakeDamage(float damage)
@@ -176,20 +322,26 @@ namespace BadNorth3D
 
         void ShowDamageEffect()
         {
-            // 简单的受伤闪红效果
+            // 播放受击音效
+            if (AudioSynthesizer.Instance != null)
+            {
+                AudioSynthesizer.Instance.PlayHitSound();
+            }
+
+            // 受伤闪白效果
             Renderer[] renderers = GetComponentsInChildren<Renderer>();
             foreach (Renderer renderer in renderers)
             {
-                StartCoroutine(FlashRed(renderer));
+                StartCoroutine(FlashWhite(renderer));
             }
         }
 
-        IEnumerator FlashRed(Renderer renderer)
+        IEnumerator FlashWhite(Renderer renderer)
         {
             if (renderer.material.HasProperty("_Color"))
             {
                 Color originalColor = renderer.material.color;
-                renderer.material.color = Color.red;
+                renderer.material.color = Color.white;
                 yield return new WaitForSeconds(0.1f);
                 renderer.material.color = originalColor;
             }
@@ -197,11 +349,44 @@ namespace BadNorth3D
 
         void Die()
         {
+            // 播放死亡音效
+            if (AudioSynthesizer.Instance != null)
+            {
+                AudioSynthesizer.Instance.PlayDeathSound();
+            }
+
             GameManager.Instance.OnEnemyKilled(goldReward);
 
-            // 死亡效果
-            GameObject deathEffect = Instantiate(Resources.Load<GameObject>("Prefabs/EnemyDeathEffect"), transform.position, Quaternion.identity);
-            Destroy(deathEffect, 2f);
+            // 程序化死亡效果
+            StartCoroutine(PlayDeathAnimation());
+        }
+
+        IEnumerator PlayDeathAnimation()
+        {
+            // 根据敌人类型播放不同的死亡动画
+            float deathDuration = 0.5f;
+            float elapsed = 0f;
+            Vector3 originalScale = transform.localScale;
+
+            while (elapsed < deathDuration)
+            {
+                float t = elapsed / deathDuration;
+
+                if (enemyType == EnemyType.Heavy)
+                {
+                    // 重型单位倒下
+                    transform.rotation = Quaternion.Euler(t * 90f, transform.rotation.eulerAngles.y, transform.rotation.eulerAngles.z);
+                    transform.localScale = originalScale * (1f - t * 0.3f);
+                }
+                else
+                {
+                    // 其他单位缩小消失
+                    transform.localScale = originalScale * (1f - t);
+                }
+
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
 
             Destroy(gameObject);
         }
