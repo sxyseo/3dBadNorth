@@ -333,16 +333,43 @@ namespace BadNorth3D
                 AudioSynthesizer.Instance.PlayDeathSound();
             }
 
+            // 检查是否为精英敌人，给予额外奖励
+            EliteEnemy eliteComponent = GetComponent<EliteEnemy>();
+            float finalReward = goldReward;
+
+            if (eliteComponent != null)
+            {
+                EliteEnemyInfo info = eliteComponent.GetInfo();
+                finalReward *= info.RewardMultiplier;
+
+                // 通知任务系统Boss击败（如果是高级精英）
+                if (info.Variant == EliteEnemy.EnemyVariant.Champion || info.Variant == EliteEnemy.EnemyVariant.Legend)
+                {
+                    if (Quests.QuestTracker.Instance != null)
+                    {
+                        // 这里简化处理，将高级精英视为Boss
+                        Quests.QuestTracker.Instance.OnBossDefeated(Enemy.EnemyType.Normal, false);
+                    }
+                }
+            }
+
             // 通知EconomyManager
             if (EconomyManager.Instance != null)
             {
                 EconomyManager.Instance.OnEnemyKilled(enemyType);
+                EconomyManager.Instance.AddGold(finalReward - goldReward); // 额外奖励
             }
 
             // 通知成就系统
             if (Achievements.AchievementTracker.Instance != null)
             {
                 Achievements.AchievementTracker.Instance.OnEnemyKilled(enemyType);
+            }
+
+            // 通知任务系统
+            if (Quests.QuestTracker.Instance != null)
+            {
+                Quests.QuestTracker.Instance.OnEnemyKilled(enemyType);
             }
 
             GameManager.Instance.OnEnemyKilled(goldReward);

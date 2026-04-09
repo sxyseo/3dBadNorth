@@ -38,8 +38,8 @@ namespace BadNorth3D.UI
 
         void CreateUnitButtons()
         {
-            // 为每种单位类型创建按钮
-            var unitConfigs = UnitTypesConfig.PLAYER_UNITS;
+            // 为每种单位类型创建按钮 - 现在支持7种单位
+            var unitConfigs = ExtendedUnitTypesConfig.ALL_UNITS; // 使用扩展配置
             unitButtons = new UnitButton[unitConfigs.Length];
 
             for (int i = 0; i < unitConfigs.Length; i++)

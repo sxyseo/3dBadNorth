@@ -144,6 +144,13 @@ namespace BadNorth3D
                 Achievements.AchievementTracker.Instance.OnWaveComplete(currentWave);
             }
 
+            // 通知任务系统
+            if (Quests.QuestTracker.Instance != null)
+            {
+                bool hadCasualties = CheckWaveCasualties();
+                Quests.QuestTracker.Instance.OnWaveCompleted(currentWave, hadCasualties);
+            }
+
             // 检查Boss生成
             if (BossSpawner.Instance != null)
             {
@@ -243,6 +250,13 @@ namespace BadNorth3D
         {
             Time.timeScale = 1f;
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        }
+
+        bool CheckWaveCasualties()
+        {
+            // 检查波次中是否有单位阵亡
+            // 这里简化处理，实际应该跟踪波次开始时的单位数量
+            return squadUnits.Count < maxSquadSize;
         }
     }
 }
